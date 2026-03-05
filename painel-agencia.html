@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel da Agência · CAPI Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080808; --surface: #111111; --surface2: #161616;
+    --border: #2a2416; --accent: #C9A84C; --text: #F0EAD6;
+    --muted: #6B5F40; --danger: #ff4d6d; --success: #4dab7f;
+    --font: 'Syne', sans-serif; --mono: 'DM Mono', monospace;
+  }
+  *, body { background-color: inherit; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; padding: 40px 16px 80px; position: relative; overflow-x: hidden; }
+  body::before { content:''; position:fixed; top:-200px; left:50%; transform:translateX(-50%); width:800px; height:400px; background:radial-gradient(ellipse, rgba(201,168,76,0.06) 0%, transparent 70%); pointer-events:none; z-index:0; }
+  .wrapper { width:100%; max-width:680px; margin:0 auto; position:relative; z-index:1; }
+  .badge { display:inline-flex; align-items:center; gap:6px; background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.3); color:var(--accent); font-family:var(--mono); font-size:11px; padding:4px 10px; border-radius:20px; margin-bottom:14px; letter-spacing:0.08em; text-transform:uppercase; }
+  .badge span { width:6px; height:6px; background:var(--accent); border-radius:50%; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+  h1 { font-size:32px; font-weight:800; line-height:1.1; letter-spacing:-0.03em; }
+  h1 em { font-style:normal; color:var(--accent); }
+  .subtitle { margin-top:10px; color:var(--muted); font-size:13px; font-family:var(--mono); }
+  .lock-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; gap:20px; }
+  .lock-icon { width:64px; height:64px; background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.3); border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:28px; }
+  .lock-title { font-size:20px; font-weight:700; text-align:center; }
+  .lock-sub { color:var(--muted); font-family:var(--mono); font-size:12px; text-align:center; }
+  .lock-input-wrap { display:flex; gap:10px; width:100%; max-width:320px; }
+  .lock-input-wrap input { flex:1; background:var(--surface); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:14px; padding:12px 14px; border-radius:8px; outline:none; }
+  .lock-input-wrap input:focus { border-color:var(--accent); }
+  .lock-err { color:var(--danger); font-family:var(--mono); font-size:12px; display:none; }
+  .main-panel { display:none; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px; margin-bottom:16px; }
+  .card-title { font-size:11px; font-family:var(--mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+  .field { margin-bottom:18px; }
+  .field label { display:block; font-size:13px; font-weight:600; color:var(--text); margin-bottom:7px; }
+  .field label .req { color:var(--accent); margin-left:3px; }
+  .field label .hint { font-weight:400; color:var(--muted); font-family:var(--mono); font-size:11px; margin-left:6px; }
+  .field input { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:14px; padding:12px 14px; border-radius:8px; outline:none; transition:border-color 0.2s; }
+  .field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(201,168,76,0.1); }
+  .field input::placeholder { color:var(--muted); }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .btn { background:var(--accent); color:#000; border:none; font-family:var(--font); font-size:14px; font-weight:700; padding:12px 20px; border-radius:8px; cursor:pointer; transition:transform 0.15s; }
+  .btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(201,168,76,0.3); }
+  .btn-full { width:100%; padding:15px; font-size:15px; border-radius:10px; margin-top:4px; }
+  .btn-ghost { background:rgba(201,168,76,0.1); color:var(--accent); border:1px solid rgba(201,168,76,0.3); }
+  .btn-ghost:hover { background:rgba(201,168,76,0.15); transform:none; box-shadow:none; }
+  .btn-sm { font-size:12px; padding:6px 11px; border-radius:6px; cursor:pointer; font-family:var(--mono); border:1px solid; transition:background 0.2s; }
+  .btn-danger { background:rgba(255,77,109,0.1); color:var(--danger); border-color:rgba(255,77,109,0.3); }
+  .btn-danger:hover { background:rgba(255,77,109,0.2); }
+  .btn-edit { background:rgba(201,168,76,0.1); color:var(--accent); border-color:rgba(201,168,76,0.3); }
+  .btn-edit:hover { background:rgba(201,168,76,0.2); }
+  .btn-history { background:rgba(77,171,127,0.1); color:#4dab7f; border-color:rgba(77,171,127,0.3); }
+  .btn-history:hover { background:rgba(77,171,127,0.2); }
+  .btn-copy { background:rgba(201,168,76,0.1); color:var(--accent); border-color:rgba(201,168,76,0.3); white-space:nowrap; }
+  .btn-copy:hover { background:rgba(201,168,76,0.2); }
+  .client-item { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:18px 20px; margin-bottom:12px; }
+  .client-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .client-name { font-size:15px; font-weight:700; margin-bottom:4px; }
+  .client-meta { font-family:var(--mono); font-size:11px; color:var(--muted); }
+  .client-actions { display:flex; gap:6px; align-items:center; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
+  .edit-form { display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); }
+  .edit-form.open { display:block; }
+  .history-panel { display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); }
+  .history-panel.open { display:block; }
+  .history-title { font-family:var(--mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px; }
+  .sale-item { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); }
+  .sale-item:last-child { border-bottom:none; }
+  .sale-phone { font-family:var(--mono); font-size:13px; font-weight:600; }
+  .sale-info { font-family:var(--mono); color:var(--muted); font-size:11px; margin-top:2px; }
+  .sale-value { color:var(--accent); font-family:var(--mono); font-weight:600; text-align:right; font-size:13px; }
+  .sale-date { color:var(--muted); font-family:var(--mono); font-size:10px; margin-top:2px; }
+  .empty-state { text-align:center; padding:30px 20px; color:var(--muted); font-family:var(--mono); font-size:13px; }
+  .top-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:40px; }
+  .section-label { font-size:11px; font-family:var(--mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:12px; }
+  .config-section { margin-bottom:32px; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--surface); border:1px solid var(--border); color:var(--text); padding:14px 20px; border-radius:10px; font-family:var(--mono); font-size:13px; display:none; z-index:999; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
+  .toast.success { border-color:rgba(201,168,76,0.4); color:var(--accent); }
+  .toast.error { border-color:rgba(255,77,109,0.4); color:var(--danger); }
+  .spinner { display:none; width:16px; height:16px; border:2px solid rgba(0,0,0,0.3); border-top-color:#000; border-radius:50%; animation:spin 0.7s linear infinite; margin:0 auto; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="lock-screen" id="lockScreen">
+    <div class="lock-icon">🔐</div>
+    <div>
+      <div class="lock-title">Painel da Agência</div>
+      <div class="lock-sub" style="margin-top:6px">Acesso restrito · Digite a senha para continuar</div>
+    </div>
+    <div class="lock-input-wrap">
+      <input type="password" id="lockInput" placeholder="Senha da agência" onkeydown="if(event.key==='Enter')unlock()">
+      <button class="btn" onclick="unlock()">→</button>
+    </div>
+    <div class="lock-err" id="lockErr">Senha incorreta.</div>
+  </div>
+
+  <div class="main-panel" id="mainPanel">
+    <div class="top-bar">
+      <div>
+        <div class="badge"><span></span> Agência</div>
+        <h1>CAPI <em>Manager</em></h1>
+        <div class="subtitle">Gerencie os pixels dos seus clientes</div>
+      </div>
+      <button class="btn btn-ghost" onclick="logout()" style="font-size:12px;padding:8px 14px">🔒 Sair</button>
+    </div>
+
+    <div class="config-section">
+      <div class="section-label">⚙️ Configuração do Firebase</div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">🔥 Credenciais Firebase</div>
+        <div class="row">
+          <div class="field">
+            <label>API Key <span class="req">*</span></label>
+            <input type="text" id="fbApiKey" placeholder="AIzaSy...">
+          </div>
+          <div class="field">
+            <label>Project ID <span class="req">*</span></label>
+            <input type="text" id="fbProjectId" placeholder="meu-projeto-12345">
+          </div>
+        </div>
+        <div class="field">
+          <label>Auth Domain</label>
+          <input type="text" id="fbAuthDomain" placeholder="meu-projeto.firebaseapp.com">
+        </div>
+        <button class="btn btn-ghost btn-full" onclick="saveFirebaseConfig()">Salvar Configuração Firebase</button>
+      </div>
+    </div>
+
+    <div class="section-label">➕ Cadastrar novo cliente</div>
+    <div class="card">
+      <div class="card-title">Dados do Cliente</div>
+      <div class="field">
+        <label>Nome da Empresa <span class="req">*</span></label>
+        <input type="text" id="clientName" placeholder="ex: João Gontijo Mentoria">
+      </div>
+      <div class="field">
+        <label>Slug / ID único <span class="req">*</span> <span class="hint">sem espaço, só letras e traços</span></label>
+        <input type="text" id="clientSlug" placeholder="ex: joao-gontijo" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'')">
+      </div>
+      <div class="field">
+        <label>Pixel ID <span class="req">*</span></label>
+        <input type="text" id="clientPixelId" placeholder="ex: 1234567890123456">
+      </div>
+      <div class="field">
+        <label>Access Token <span class="req">*</span></label>
+        <input type="text" id="clientToken" placeholder="EAAxxxxxx...">
+      </div>
+      <div class="field">
+        <label>Test Event Code <span class="hint">opcional</span></label>
+        <input type="text" id="clientTestCode" placeholder="TEST12345">
+      </div>
+      <button class="btn btn-full" id="btnAdd" onclick="addClient()">
+        <span id="btnAddText">✓ Cadastrar Cliente</span>
+        <div class="spinner" id="btnAddSpinner"></div>
+      </button>
+    </div>
+
+    <div class="section-label">👥 Clientes cadastrados</div>
+    <div class="card">
+      <div id="clientsList"><div class="empty-state">Nenhum cliente cadastrado ainda.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const AGENCY_PASSWORD = "trafegopago";
+let db = null;
+
+function getFirebaseConfig() {
+  const s = localStorage.getItem("fb_firebase_config");
+  return s ? JSON.parse(s) : { apiKey: "AIzaSyAhMAelXZVF5in0-Cs4W9WjBJvx6USeUbA", authDomain: "projeto-trackeamento-95ef2.firebaseapp.com", projectId: "projeto-trackeamento-95ef2" };
+}
+
+function initFirebase() {
+  const cfg = getFirebaseConfig();
+  if (!cfg || !cfg.apiKey || !cfg.projectId) return false;
+  try {
+    if (firebase.apps.length) firebase.apps.forEach(a => a.delete());
+    firebase.initializeApp({ apiKey: cfg.apiKey, authDomain: cfg.authDomain || cfg.projectId+".firebaseapp.com", projectId: cfg.projectId });
+    db = firebase.firestore();
+    return true;
+  } catch(e) { console.error(e); return false; }
+}
+
+function unlock() {
+  if (document.getElementById("lockInput").value === AGENCY_PASSWORD) {
+    document.getElementById("lockScreen").style.display = "none";
+    document.getElementById("mainPanel").style.display = "block";
+    loadFirebaseConfig();
+    if (initFirebase()) loadClients();
+  } else {
+    document.getElementById("lockErr").style.display = "block";
+    document.getElementById("lockInput").value = "";
+  }
+}
+
+function logout() {
+  document.getElementById("lockScreen").style.display = "flex";
+  document.getElementById("mainPanel").style.display = "none";
+  document.getElementById("lockInput").value = "";
+}
+
+function loadFirebaseConfig() {
+  const cfg = getFirebaseConfig();
+  if (cfg) {
+    document.getElementById("fbApiKey").value = cfg.apiKey || "";
+    document.getElementById("fbProjectId").value = cfg.projectId || "";
+    document.getElementById("fbAuthDomain").value = cfg.authDomain || "";
+  }
+}
+
+function saveFirebaseConfig() {
+  const cfg = {
+    apiKey: document.getElementById("fbApiKey").value.trim(),
+    projectId: document.getElementById("fbProjectId").value.trim(),
+    authDomain: document.getElementById("fbAuthDomain").value.trim(),
+  };
+  if (!cfg.apiKey || !cfg.projectId) { showToast("error", "Preencha API Key e Project ID"); return; }
+  localStorage.setItem("fb_firebase_config", JSON.stringify(cfg));
+  if (initFirebase()) { showToast("success", "✓ Firebase conectado!"); loadClients(); }
+  else showToast("error", "Erro ao conectar. Verifique as credenciais.");
+}
+
+async function addClient() {
+  if (!db) { showToast("error", "Configure o Firebase primeiro."); return; }
+  const name = document.getElementById("clientName").value.trim();
+  const slug = document.getElementById("clientSlug").value.trim();
+  const pixelId = document.getElementById("clientPixelId").value.trim();
+  const token = document.getElementById("clientToken").value.trim();
+  const testCode = document.getElementById("clientTestCode").value.trim();
+  if (!name || !slug || !pixelId || !token) { showToast("error", "Preencha todos os campos obrigatórios."); return; }
+  setAddLoading(true);
+  try {
+    await db.collection("clients").add({ name, slug, pixelId, token, testCode, createdAt: Date.now() });
+    showToast("success", "✓ Cliente cadastrado!");
+    ["clientName","clientSlug","clientPixelId","clientToken","clientTestCode"].forEach(id => document.getElementById(id).value = "");
+    loadClients();
+  } catch(e) { showToast("error", "Erro: " + e.message); }
+  setAddLoading(false);
+}
+
+async function loadClients() {
+  if (!db) return;
+  const list = document.getElementById("clientsList");
+  list.innerHTML = "<div class='empty-state'>Carregando...</div>";
+  try {
+    const snap = await db.collection("clients").orderBy("createdAt","desc").get();
+    if (snap.empty) { list.innerHTML = "<div class='empty-state'>Nenhum cliente cadastrado ainda.</div>"; return; }
+    list.innerHTML = "";
+    snap.forEach(d => {
+      const c = d.data(); const docId = d.id;
+      const baseUrl = window.location.href.replace("painel-agencia.html","registrar-venda.html");
+      const link = baseUrl + "?c=" + c.slug;
+      const div = document.createElement("div");
+      div.className = "client-item";
+      div.innerHTML =
+        '<div class="client-top">' +
+          '<div>' +
+            '<div class="client-name">' + c.name + '</div>' +
+            '<div class="client-meta">Slug: ' + c.slug + ' · Pixel: ' + c.pixelId.slice(0,8) + '... · ' + (c.testCode ? "🧪 Test" : "✓ Produção") + '</div>' +
+          '</div>' +
+          '<div class="client-actions">' +
+            '<button class="btn-sm btn-copy" onclick="copyLink(\'' + link + '\')">📋 Link</button>' +
+            '<button class="btn-sm btn-history" onclick="toggleHistory(\'' + docId + '\',\'' + c.slug + '\')">📊 Vendas</button>' +
+            '<button class="btn-sm btn-edit" onclick="toggleEdit(\'' + docId + '\')">✏️ Editar</button>' +
+            '<button class="btn-sm btn-danger" onclick="removeClient(\'' + docId + '\',\'' + c.name + '\')">✕</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="edit-form" id="edit-' + docId + '">' +
+          '<div class="row" style="margin-bottom:12px">' +
+            '<div class="field" style="margin:0"><label style="font-size:12px">Nome</label><input type="text" id="en-' + docId + '" value="' + c.name + '"></div>' +
+            '<div class="field" style="margin:0"><label style="font-size:12px">Pixel ID</label><input type="text" id="ep-' + docId + '" value="' + c.pixelId + '"></div>' +
+          '</div>' +
+          '<div class="row" style="margin-bottom:14px">' +
+            '<div class="field" style="margin:0"><label style="font-size:12px">Access Token</label><input type="text" id="et-' + docId + '" value="' + c.token + '"></div>' +
+            '<div class="field" style="margin:0"><label style="font-size:12px">Test Code</label><input type="text" id="ec-' + docId + '" value="' + (c.testCode||'') + '"></div>' +
+          '</div>' +
+          '<button class="btn btn-ghost" style="font-size:13px;padding:10px 18px" onclick="saveEdit(\'' + docId + '\')">✓ Salvar alterações</button>' +
+        '</div>' +
+        '<div class="history-panel" id="hist-' + docId + '">' +
+          '<div class="history-title">📊 Histórico de Vendas</div>' +
+          '<div id="hist-list-' + docId + '"><div class="empty-state" style="padding:12px 0">Carregando...</div></div>' +
+        '</div>';
+      list.appendChild(div);
+    });
+  } catch(e) { list.innerHTML = "<div class='empty-state'>Erro ao carregar.</div>"; console.error(e); }
+}
+
+function toggleEdit(id) {
+  document.getElementById("edit-"+id).classList.toggle("open");
+}
+
+async function saveEdit(id) {
+  const name = document.getElementById("en-"+id).value.trim();
+  const pixelId = document.getElementById("ep-"+id).value.trim();
+  const token = document.getElementById("et-"+id).value.trim();
+  const testCode = document.getElementById("ec-"+id).value.trim();
+  if (!name || !pixelId || !token) { showToast("error","Preencha nome, Pixel ID e Token."); return; }
+  try {
+    await db.collection("clients").doc(id).update({ name, pixelId, token, testCode });
+    showToast("success","✓ Cliente atualizado!");
+    loadClients();
+  } catch(e) { showToast("error","Erro: "+e.message); }
+}
+
+async function toggleHistory(id, slug) {
+  const panel = document.getElementById("hist-"+id);
+  panel.classList.toggle("open");
+  if (!panel.classList.contains("open")) return;
+  const listEl = document.getElementById("hist-list-"+id);
+  listEl.innerHTML = "<div class='empty-state' style='padding:12px 0'>Carregando...</div>";
+  try {
+    const snap = await db.collection("sales").where("clientSlug","==",slug).orderBy("createdAt","desc").limit(50).get();
+    if (snap.empty) { listEl.innerHTML = "<div class='empty-state' style='padding:12px 0'>Nenhuma venda registrada ainda.</div>"; return; }
+    listEl.innerHTML = "";
+    snap.forEach(d => {
+      const s = d.data();
+      const date = new Date(s.createdAt).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+      const item = document.createElement("div");
+      item.className = "sale-item";
+      item.innerHTML =
+        '<div>' +
+          '<div class="sale-phone">' + (s.phone||"—") + '</div>' +
+          '<div class="sale-info">' + (s.product||"sem produto") + ' · ' + (s.status==="ok"?"✓ Enviado":"✗ Falhou") + '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div class="sale-value">' + s.currency + ' ' + parseFloat(s.value||0).toLocaleString("pt-BR",{minimumFractionDigits:2}) + '</div>' +
+          '<div class="sale-date">' + date + '</div>' +
+        '</div>';
+      listEl.appendChild(item);
+    });
+  } catch(e) { listEl.innerHTML = "<div class='empty-state' style='padding:12px 0'>Erro ao carregar.</div>"; }
+}
+
+async function removeClient(id, name) {
+  if (!confirm("Remover cliente \""+name+"\"?")) return;
+  try {
+    await db.collection("clients").doc(id).delete();
+    showToast("success","Cliente removido.");
+    loadClients();
+  } catch(e) { showToast("error","Erro ao remover."); }
+}
+
+function copyLink(link) {
+  navigator.clipboard.writeText(link).then(() => showToast("success","✓ Link copiado!"));
+}
+
+function setAddLoading(on) {
+  document.getElementById("btnAdd").disabled = on;
+  document.getElementById("btnAddText").style.display = on ? "none" : "block";
+  document.getElementById("btnAddSpinner").style.display = on ? "block" : "none";
+}
+
+function showToast(type, msg) {
+  const t = document.getElementById("toast");
+  t.className = "toast "+type; t.textContent = msg; t.style.display = "block";
+  setTimeout(() => t.style.display = "none", 4000);
+}
+</script>
+</body>
+</html>
